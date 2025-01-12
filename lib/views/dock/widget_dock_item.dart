@@ -15,9 +15,9 @@ class WidgetDockItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minWidth: baseWidth),
-      width: baseWidth,
-      height: baseHeight,
+      constraints: const BoxConstraints(minWidth: baseWidthItem),
+      width: baseWidthItem,
+      height: baseHeightItem,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
         color: color,

@@ -21,8 +21,8 @@ class WidgetDockContainer extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(itemSpacing / 2),
       constraints: const BoxConstraints(
-        minHeight: baseHeight + 16,
-        maxHeight: baseHeight + 16,
+        minHeight: baseHeightItem + 16,
+        maxHeight: baseHeightItem + 16,
       ),
       child: child,
     );

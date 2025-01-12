@@ -1,12 +1,12 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import 'widget_dock_container.dart';
 import 'widget_dock_item.dart';
 
-const double baseWidth = 48;
-const double baseHeight = 48;
-const double expandedHeight = baseHeight * 1.4;
-const double betweenHeight = baseHeight * 1.3;
+const double baseWidthItem = 48;
+const double baseHeightItem = 48;
 const double itemSpacing = 16;
 const double borderRadius = 8;
 
@@ -37,6 +37,9 @@ class _WidgetDockState<T> extends State<WidgetDock<T>>
   /// [T] items being manipulated.
   late final List<T> _items = widget.items.toList();
 
+  int? hoveredIndex;
+  double baseTranslationY = 0;
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +52,56 @@ class _WidgetDockState<T> extends State<WidgetDock<T>>
     _animationController.dispose();
     super.dispose();
   }
+
+  double getScaledSize(int index) {
+    return getPropertyValue(
+      index: index,
+      baseValue: baseHeightItem,
+      maxValue: 55,
+      nonHoveredMaxValue: 52,
+    );
+  }
+
+  double getTranslationY(int index) {
+    return getPropertyValue(
+      index: index,
+      baseValue: baseTranslationY,
+      maxValue: -14,
+      nonHoveredMaxValue: -14,
+    );
+  }
+
+  double getPropertyValue({
+    required int index,
+    required double baseValue,
+    required double maxValue,
+    required double nonHoveredMaxValue,
+  }) {
+    late final double propertyValue;
+
+    if (hoveredIndex == null) {
+      return baseValue;
+    }
+
+    final difference = (hoveredIndex! - index).abs();
+
+    final itemsAffected = _items.length;
+
+    if (difference == 0) {
+      propertyValue = maxValue;
+
+    } else if (difference <= itemsAffected) {
+      final ratio = (itemsAffected - difference) / itemsAffected;
+
+      propertyValue = lerpDouble(baseValue, nonHoveredMaxValue, ratio)!;
+
+    } else {
+      propertyValue = baseValue;
+    }
+
+    return propertyValue;
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +136,14 @@ class _WidgetDockState<T> extends State<WidgetDock<T>>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeInOut,
-        width: _stateController.shouldShrink(index) ? 0 : baseWidth,
+        transform: Matrix4.identity()
+          ..translate(
+            0.0,
+            getTranslationY(index),
+            0.0,
+          ),
+        width: _stateController.shouldShrink(index) ? 0 : getScaledSize(index),
+        height: getScaledSize(index),
         child: buildDraggableItem(index),
       ),
     );
@@ -111,6 +171,7 @@ class _WidgetDockState<T> extends State<WidgetDock<T>>
       onDragStarted: () {
         setState(() {
           _stateController.handleDragStart(index);
+          hoveredIndex = index;
         });
         _animationController.forward();
       },
@@ -118,6 +179,7 @@ class _WidgetDockState<T> extends State<WidgetDock<T>>
         _animationController.reverse();
         setState(() {
           _stateController.handleDragEnd();
+          hoveredIndex = null;
         });
       },
       onDragUpdate: handleDragUpdate,
@@ -158,6 +220,7 @@ class _WidgetDockState<T> extends State<WidgetDock<T>>
     if (isOutside != _stateController.isOutsideDock) {
       setState(() {
         _stateController.isOutsideDock = isOutside;
+        hoveredIndex = null;
       });
     }
 
@@ -167,6 +230,8 @@ class _WidgetDockState<T> extends State<WidgetDock<T>>
         _stateController.draggedIndex,
         _stateController.items.length,
         (index) {
+          hoveredIndex = index;
+
           if (_stateController.targetIndex != index) {
             setState(() {
               _stateController.targetIndex = index;
@@ -227,8 +292,8 @@ class DockPositionController {
 
     final double dx = position.dx;
     for (int i = 0; i < itemsLength; i++) {
-      final double itemStart = i * (baseWidth + itemSpacing);
-      final double itemCenter = itemStart + (baseWidth + itemSpacing) / 2;
+      final double itemStart = i * (baseWidthItem + itemSpacing);
+      final double itemCenter = itemStart + (baseWidthItem + itemSpacing) / 2;
 
       if (dx < itemCenter) {
         onTargetIndexChanged(i);
